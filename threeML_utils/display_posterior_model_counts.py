@@ -89,28 +89,36 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
 
     # Now override defaults according to the optional keywords, if present
 
+    model_kwargs = dict(alpha=0.05, zorder=-5000)
     if 'model_kwargs' in kwargs:
 
-        model_kwargs = kwargs.pop('model_kwargs')
+        model_kwargs_tmp = kwargs.pop('model_kwargs')
 
-    else:
+        for k,v in model_kwargs_tmp.items():
 
-        model_kwargs = dict(alpha=0.05, zorder=-5000)
+            model_kwargs[k] = v
 
+        
+
+    data_kwargs = dict(
+        alpha=1.,
+        fmt=threeML_config['residual plot']['error marker'],
+        markersize=threeML_config['residual plot']['error marker size'],
+        linestyle='',
+        elinewidth=threeML_config['residual plot']['error line width'],
+        capsize=0,
+        zorder=-1)
+
+            
     if 'data_kwargs' in kwargs:
 
-        data_kwargs = kwargs.pop('data_kwargs')
+        data_kwargs_tmp = kwargs.pop('data_kwargs')
 
-    else:
+        for k,v in data_kwargs_tmp.items():
 
-        data_kwargs = dict(
-            alpha=1.,
-            fmt=threeML_config['residual plot']['error marker'],
-            markersize=threeML_config['residual plot']['error marker size'],
-            linestyle='',
-            elinewidth=threeML_config['residual plot']['error line width'],
-            capsize=0,
-            zorder=-1)
+            data_kwargs[k] = v
+        
+
 
     if 'show_data' in kwargs:
 
