@@ -130,7 +130,6 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
         step = bool(kwargs.pop('step'))
 
     if 'min_rate' in kwargs:
-
         min_rate = kwargs.pop('min_rate')
 
         # If min_rate is a floating point, use the same for all datasets, otherwise use the provided ones
@@ -189,7 +188,6 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
         model_colors = [kwargs.pop('model_color')] * len(data_keys)
 
     if 'model_labels' in kwargs:
-
         model_labels = kwargs.pop('model_labels')
 
         assert len(model_labels) == len(data_keys), 'you must have the same number of model labels as data sets'
@@ -210,7 +208,7 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
 
         axes = residual_plot.data_axis
 
-    # go thru the detectors
+
 
     # extract the samples
     if result is None:
@@ -247,6 +245,7 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
                     ratio_residuals=ratio_residuals,
                     model_label=None,
                     model_subplot=axes,
+                    data_kwargs=data_kwargs,
                     model_kwargs=model_kwargs)
 
     for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors, min_rates,
