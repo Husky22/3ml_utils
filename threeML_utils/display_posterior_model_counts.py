@@ -1,3 +1,4 @@
+import threeML
 from threeML import threeML_config
 from threeML.io.plotting.cmap_cycle import cmap_intervals
 from threeML.io.plotting.data_residual_plot import ResidualPlot
