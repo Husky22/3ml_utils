@@ -7,7 +7,7 @@ import numpy as np
 
 NO_REBIN = 1E-99
 
-def display_posterior_model_counts(bayesian_analysis, thin=100, data=(), **kwargs):
+def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, data=(), **kwargs):
     """
 
     Display the fitted model count spectrum of one or more Spectrum plugins
@@ -213,9 +213,15 @@ def display_posterior_model_counts(bayesian_analysis, thin=100, data=(), **kwarg
     # go thru the detectors
 
     # extract the samples
+    if result is None:
+        samples = bayesian_analysis.results.samples.T[::thin]
 
-    samples = bayesian_analysis.results.samples.T[::thin]
+    else:
 
+        samples = result.samples.T[::thin]
+        
+
+        
     for params in samples:
 
         for i, (k, v) in enumerate(bayesian_analysis.likelihood_model.free_parameters.items()):
