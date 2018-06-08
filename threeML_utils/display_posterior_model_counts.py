@@ -7,7 +7,7 @@ import numpy as np
 
 NO_REBIN = 1E-99
 
-def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, data=(), **kwargs):
+def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, shade=True, data=(), **kwargs):
     """
 
     Display the fitted model count spectrum of one or more Spectrum plugins
@@ -226,7 +226,7 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
 
         samples = result.samples.T[::thin]
         
-
+     
         
     for params in samples:
 
@@ -235,12 +235,16 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, d
             v.value = params[i]
 
             # first with no data
-            for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors,
-                                                                           min_rates, model_labels):
+        for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors,
+                                                                       min_rates, model_labels):
 
-                # NOTE: we use the original (unmasked) vectors because we need to rebin ourselves the data later on
 
-                data = bayesian_analysis.data_list[key]    # type: threeML.plugins.SpectrumLike.SpectrumLike
+
+            # NOTE: we use the original (unmasked) vectors because we need to rebin ourselves the data later on
+
+            data = bayesian_analysis.data_list[key]    # type: threeML.plugins.SpectrumLike.SpectrumLike
+
+            if not shade:
 
                 data.display_model(
                     data_color=data_color,
