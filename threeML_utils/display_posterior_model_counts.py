@@ -6,25 +6,32 @@ from threeML.io.plotting.data_residual_plot import ResidualPlot
 import numpy as np
 from threeML_utils.colors import Colors
 
-
-
 NO_REBIN = 1E-99
 
 
-def scale_colour(self, colour, scalefactor):  # pragma: no cover
-        if isinstance(colour, np.ndarray):
-            r, g, b = colour[:3] * 255.0
-        else:
-            hexx = colour.strip('#')
-            if scalefactor < 0 or len(hexx) != 6:
-                return hexx
-            r, g, b = int(hexx[:2], 16), int(hexx[2:4], 16), int(hexx[4:], 16)
-        r = self._clamp(int(r * scalefactor))
-        g = self._clamp(int(g * scalefactor))
-        b = self._clamp(int(b * scalefactor))
-        return "#%02x%02x%02x" % (r, g, b)
+def scale_colour(self, colour, scalefactor):    # pragma: no cover
+    if isinstance(colour, np.ndarray):
+        r, g, b = colour[:3] * 255.0
+    else:
+        hexx = colour.strip('#')
+        if scalefactor < 0 or len(hexx) != 6:
+            return hexx
+        r, g, b = int(hexx[:2], 16), int(hexx[2:4], 16), int(hexx[4:], 16)
+    r = self._clamp(int(r * scalefactor))
+    g = self._clamp(int(g * scalefactor))
+    b = self._clamp(int(b * scalefactor))
+    return "#%02x%02x%02x" % (r, g, b)
 
-def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, shade=True, q_level=68, gradient=0.6, data=(), **kwargs):
+
+def display_posterior_model_counts(bayesian_analysis,
+                                   result=None,
+                                   thin=100,
+                                   shade=True,
+                                   q_level=68,
+                                   gradient=0.6,
+                                  
+                                   data=(),
+                                   **kwargs):
     """
 
     Display the fitted model count spectrum of one or more Spectrum plugins
@@ -111,11 +118,9 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
 
         model_kwargs_tmp = kwargs.pop('model_kwargs')
 
-        for k,v in model_kwargs_tmp.items():
+        for k, v in model_kwargs_tmp.items():
 
             model_kwargs[k] = v
-
-        
 
     data_kwargs = dict(
         alpha=1.,
@@ -126,16 +131,13 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
         capsize=0,
         zorder=-1)
 
-            
     if 'data_kwargs' in kwargs:
 
         data_kwargs_tmp = kwargs.pop('data_kwargs')
 
-        for k,v in data_kwargs_tmp.items():
+        for k, v in data_kwargs_tmp.items():
 
             data_kwargs[k] = v
-        
-
 
     if 'show_data' in kwargs:
 
@@ -151,6 +153,10 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
     if 'show_residuals' in kwargs:
         show_residuals = bool(kwargs.pop('show_residuals'))
 
+        residual_storage=[]
+        residual_err_storage=[]
+
+        
     if 'step' in kwargs:
         step = bool(kwargs.pop('step'))
 
@@ -233,8 +239,6 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
 
         axes = residual_plot.data_axis
 
-
-
     # extract the samples
     if result is None:
         samples = bayesian_analysis.results.samples.T[::thin]
@@ -242,9 +246,6 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
     else:
 
         samples = result.samples.T[::thin]
-        
-     
-
 
     if shade:
 
@@ -252,7 +253,7 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
 
         shade_y = []
         shade_x = []
-    
+
     for params in samples:
 
         for i, (k, v) in enumerate(bayesian_analysis.likelihood_model.free_parameters.items()):
@@ -264,10 +265,8 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
             per_det_y = []
             per_det_x = []
 
-        for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors,
-                                                                       min_rates, model_labels):
-
-
+        for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors, min_rates,
+                                                                       model_labels):
 
             # NOTE: we use the original (unmasked) vectors because we need to rebin ourselves the data later on
 
@@ -301,9 +300,8 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
 
                     y = (rebinned_quantities['expected_model_rate'] / rebinned_quantities['chan_width'])[data.mask]
 
-
-                    x =  np.mean([rebinned_quantities['energy_min'],
-                         rebinned_quantities['energy_max']], axis=0)[data.mask]
+                    x = np.mean(
+                        [rebinned_quantities['energy_min'], rebinned_quantities['energy_max']], axis=0)[data.mask]
 
                     per_det_y.append(y)
                     per_det_x.append(x)
@@ -318,15 +316,12 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
         shade_y = np.array(shade_y).T
         shade_x = np.array(shade_x).T
         model_kwargs.pop('zorder')
-        for key, data_color, model_color, min_rate, model_label, x, y, in zip(data_keys, data_colors, model_colors, min_rates,
-                                                                              model_labels, shade_x, shade_y):
+        for key, data_color, model_color, min_rate, model_label, x, y, in zip(
+                data_keys, data_colors, model_colors, min_rates, model_labels, shade_x, shade_y):
 
-
-        
-            
             # we have to do a little reshaping because... life
 
-            y = np.array([yy.tolist() for yy in y ])
+            y = np.array([yy.tolist() for yy in y])
 
             q_levels = np.atleast_1d(q_level)
             q_levels.sort()
@@ -336,21 +331,18 @@ def display_posterior_model_counts(bayesian_analysis, result = None ,thin=100, s
             for level in q_levels:
 
                 color = color_config.format(model_color)
-                color_scale = color_config.scale_colour(color,scale)
-            
+                color_scale = color_config.scale_colour(color, scale)
+
                 # first we need to get the quantiles along the energy axis
-                low = np.percentile(y, 50 - level*0.5, axis=0)
-                high = np.percentile(y, 50 + level*0.5, axis=0)
-                
-                residual_plot.data_axis.fill_between(x[0], low, high, color=color_scale,zorder=zorder, **model_kwargs)
+                low = np.percentile(y, 50 - level * 0.5, axis=0)
+                high = np.percentile(y, 50 + level * 0.5, axis=0)
+
+                residual_plot.data_axis.fill_between(x[0], low, high, color=color_scale, zorder=zorder, **model_kwargs)
 
                 scale *= gradient
 
-                zorder-=1
-        
+                zorder -= 1
 
-        
-                
     for key, data_color, model_color, min_rate, model_label in zip(data_keys, data_colors, model_colors, min_rates,
                                                                    model_labels):
 
