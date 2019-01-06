@@ -6,25 +6,28 @@ from threeML import DataList, clone_model
 import h5py
 
 
-def compute_ppc(analysis, result, n_sims, file_name=None):
-    """FIXME! briefly describe function
+def compute_ppc(analysis, result, n_sims, file_name):
+    """ 
+    Compute a posterior predictive check from a 3ML DispersionLike
+    Plugin. The resulting posterior data simulations are stored
+    in an HDF5 file which can be read by the PPC class
 
-    :param analysis: 
-    :param result: 
-    :param n_sims: 
-    :param file_name: 
-    :returns: 
+    :param analysis: 3ML bayesian analysis object 
+    :param result: 3ML analysis result
+    :param n_sims: the number of posterior simulations to create
+    :param file_name: the filename to save to
+    :returns: None
     :rtype: 
 
     """
 
-    totals = []
-    sim_totals = []
-    sim_dls = []
+    with h5py.File(file_name, 'w', libver='latest') as database:
+    
 
-    if file_name is not None:
 
-        database = h5py.File(file_name, 'w', libver='latest')
+        # first we collect the real data data and save it so that we will not have to
+        # look it up in the future
+        
         data_names = []
 
         database.attrs['n_sims'] = n_sims
@@ -39,41 +42,40 @@ def compute_ppc(analysis, result, n_sims, file_name=None):
             grp.create_dataset('bkg_counts', data=data.background_counts, compression='lzf')
             grp.create_dataset('mask', data=data.mask, compression='lzf')
 
-    # select random draws from the posterior
-    choices = np.random.choice(len(result.samples.T), replace=False, size=n_sims)
+        # select random draws from the posterior
 
-    # for each posterior
-    for j, choice in enumerate(choices):
+        choices = np.random.choice(len(result.samples.T), replace=False, size=n_sims)
 
-        params = result.samples.T[choice]
+        # for each posterior sample
 
-        # set the analysis free parameters to the value of the posterior
-        for i, (k, v) in enumerate(analysis.likelihood_model.free_parameters.items()):
-            v.value = params[i]
+        for j, choice in enumerate(choices):
 
-        # create simulated data sets with these free parameters
-        sim_dl = DataList(*[data.get_simulated_dataset() for data in analysis.data_list.values()])
+            # get the parameters of the choice
+            
+            params = result.samples.T[choice]
 
-        # set the model of the simulated data to the model of the simulation
-        for i, data in enumerate(sim_dl.values()):
+            # set the analysis free parameters to the value of the posterior
+            for i, (k, v) in enumerate(analysis.likelihood_model.free_parameters.items()):
+                v.value = params[i]
 
-            data.set_model(clone_model(analysis.likelihood_model))
+            # create simulated data sets with these free parameters
+            sim_dl = DataList(*[data.get_simulated_dataset() for data in analysis.data_list.values()])
 
-            if file_name is not None:
+            # set the model of the simulated data to the model of the simulation
+            for i, data in enumerate(sim_dl.values()):
 
+                # clone the model for saftey's sake
+                # and set the model. For now we do nothing with this
+                
+                data.set_model(clone_model(analysis.likelihood_model))
+
+                # store the PPC data in the file
                 grp = database[data_names[i]]
                 grp.create_dataset('ppc_counts_%d' % j, data=data.observed_counts, compression='lzf')
-
-                #grp.create_dataset('ppc_bkg_%d'%j, data=data.background_counts, compression='lzf')
                 grp.create_dataset('ppc_background_counts_%d' % j, data=data.background_counts, compression='lzf')
+            #sim_dls.append(sim_dl)
 
-        sim_dls.append(sim_dl)
 
-    if file_name is not None:
-
-        database.close()
-
-    return sim_dls
 
 
 class PPC(object):
