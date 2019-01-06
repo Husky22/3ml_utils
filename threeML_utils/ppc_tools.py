@@ -22,12 +22,10 @@ def compute_ppc(analysis, result, n_sims, file_name):
     """
 
     with h5py.File(file_name, 'w', libver='latest') as database:
-    
-
 
         # first we collect the real data data and save it so that we will not have to
         # look it up in the future
-        
+
         data_names = []
 
         database.attrs['n_sims'] = n_sims
@@ -51,7 +49,7 @@ def compute_ppc(analysis, result, n_sims, file_name):
         for j, choice in enumerate(choices):
 
             # get the parameters of the choice
-            
+
             params = result.samples.T[choice]
 
             # set the analysis free parameters to the value of the posterior
@@ -66,7 +64,7 @@ def compute_ppc(analysis, result, n_sims, file_name):
 
                 # clone the model for saftey's sake
                 # and set the model. For now we do nothing with this
-                
+
                 data.set_model(clone_model(analysis.likelihood_model))
 
                 # store the PPC data in the file
@@ -76,24 +74,32 @@ def compute_ppc(analysis, result, n_sims, file_name):
             #sim_dls.append(sim_dl)
 
 
-
-
 class PPC(object):
 
     def __init__(self, filename):
-        """FIXME! briefly describe function
+        """
+        Reads a PPC HDF5 created by compute_ppc. This applies to DispersionLike
+        data types only. Each detector is read from the file and an associated
+        detector attribute is added to the class allowing the user to access the
+        observed and PPC information of the detector
+        
 
-        :param filename: 
+        :param filename: the file name to read
         :returns: 
         :rtype: 
 
         """
+
+        # open the file
 
         with h5py.File(filename, 'r') as f:
 
             n_sims = f.attrs['n_sims']
 
             dets = f.keys()
+
+            # go thru all the detectors and grab
+            # their data
 
             for d in dets:
 
@@ -106,6 +112,8 @@ class PPC(object):
                 ebounds = f[d]['ebounds'].value
 
                 exposure = f[d].attrs['exposure']
+
+                # scroll thru the PPCS and build up PPC matrix
 
                 for n in range(n_sims):
                     ppc_counts.append(f[d]['ppc_counts_%d' % n].value.tolist())
@@ -130,7 +138,8 @@ class PPC(object):
 class PPCDetector(object):
 
     def __init__(self, name, obs_counts, obs_background, mask, ebounds, exposure, ppc_counts, ppc_background):
-        """FIXME! briefly describe function
+        """
+        This is simply a container object that stores the observed and PPC information of each detector for examination
 
         :param name: 
         :param obs_counts: 
@@ -191,140 +200,51 @@ class PPCDetector(object):
     def ppc_background(self):
         return self._ppc_background
 
+    def plot(self, ax=None, levels=[95, 75, 55], colors=['#ABB2B9', '#566573', '#17202A'], lc='#FFD100', lw=.9):
 
-# light="#DCBCBC"
-# light_highlight="#C79999"
-# mid="#B97C7C"
-# mid_highlight="#A25050"
-# dark="#8F2727"
-# dark_highlight="#7C0000"
-# green="#00FF00"
-# yellow='#EFFF2D'
+        assert len(levels) == len(colors), 'Number of levels and number of colors MUST be the same'
 
-# def compute_graphical_ppc(analysis, result, n_sims, lle=False):
+        if ax is None:
 
-#     n_dets = len(analysis.data_list.values())
+            fig, ax = plt.subplots()
 
-#     names = [d.name for d in analysis.data_list.values()]
+        else:
 
-#     sim_dls = compute_ppc(analysis, result, n_sims)
+            fig = ax.get_figure()
 
-#     n_rows = int(np.ceil(n_dets/2.))
+            ppc_low = []
+            ppc_high = []
 
-#     row_count = 0
-#     col_count = 0
+        for level in levels:
 
-#     fig, axes = plt.subplots(n_rows,2)
+            tmp_low = np.percentile(self._ppc_counts / self._channel_width / self._exposure, 50. - level / 2., axis=0)
+            tmp_high = np.percentile(self._ppc_counts / self._channel_width / self._exposure, 50. + level / 2., axis=0)
 
-#     for det in range(n_dets):
+            ppc_low.append(tmp_low)
+            ppc_high.append(tmp_high)
 
-#         if names[det][0] =='b':
-#             name = 'BGO'+names[det][1]
+    true_rate = self._obs_counts / self._channel_width / self._exposure
 
-#             tmp_rate = 0
-#         elif names[det] == 'LLE':
+    #colors = [light,mid,dark]
 
-#             name = 'LLE'
-#             tmp_rate = 0
+    for j, (lo, hi) in enumerate(zip(ppc_low, ppc_high)):
 
-#         else:
+        for i in range(len(self._ebounds) - 1):
+            if self._mask[i]:
 
-#             name = 'NaI'+names[det][1]
+                ax.fill_between([self._ebounds[i], self._ebounds[i + 1]], lo[i], hi[i], color=colors[j])
 
-#             tmp_rate = 5
+    n_chan = len(self._ebounds) - 1
 
-#         ax = axes[row_count,col_count]
+    for i in range(len(self._ebounds) - 1):
+        if self._mask[i]:
 
-#         min_rate = 1E-99
+            ax.hlines(true_rate[i], self._ebounds[i], self._ebounds[i + 1], color=lc, lw=lw)
 
-#         mean_energy = []
-#         rate = []
-#         lo_edge = []
-#         hi_edge = []
+            if i < n_chan - 1:
+                if self._mask[i + 1]:
 
-#         this_det = analysis.data_list.values()[det]
+                    ax.vlines(self._ebounds[i + 1], true_rate[i], true_rate[i + 1], color=lc, lw=lw)
 
-#         minus = 0
-#         flag = True
-#         while(flag):
-
-#             try:
-
-#                 ca = this_det._construct_counts_arrays(tmp_rate+minus,False)
-#                 print('success')
-#                 flag = False
-#             except:
-#                 print(minus)
-#                 minus-=1
-
-#         data_rebinner = ca['rebinner']
-#         data_rate = ca['new_rate']/ca['new_chan_width']
-#         data_lo_edge = ca['new_energy_min']
-#         data_hi_edge = ca['new_energy_max']
-
-#         for x in sim_dls:
-
-#             aa = x.values()[det]
-
-#             ca = aa._construct_counts_arrays(min_rate,False, custom_rebinner=data_rebinner)
-
-#             mean_energy.append(ca['mean_energy'])
-#             rate.append(ca['new_rate']/ca['new_chan_width'])
-#             lo_edge.append(ca['new_energy_min'])
-#             hi_edge.append(ca['new_energy_max'])
-
-#         rate = np.array(rate)
-
-#         level=95
-
-#         low_95 = np.percentile(rate, 50 - level*0.5, axis=0)
-#         high_95 = np.percentile(rate, 50 + level*0.5, axis=0)
-
-#         for lo_rate, hi_rate, lo_e, hi_e in zip(low_95, high_95, lo_edge[0], hi_edge[0]):
-
-#             ax.fill_between([lo_e, hi_e],lo_rate,hi_rate,facecolor=dark,edgecolor=dark_highlight)
-
-#         level=68
-
-#         low = np.percentile(rate, 50 - level*0.5, axis=0)
-#         high = np.percentile(rate, 50 + level*0.5, axis=0)
-
-#         for lo_rate, hi_rate, me, lo_e, hi_e in zip(low, high, mean_energy[0], lo_edge[0], hi_edge[0]):
-
-#             ax.fill_between([lo_e, hi_e], lo_rate, hi_rate,facecolor=mid,edgecolor=mid_highlight)
-
-#         for dr, lo_e, hi_e, lob, hib in zip(data_rate, data_lo_edge, data_hi_edge, low_95, high_95):
-
-#             if (dr>= lob) and (hib>= dr):
-#                 color = green
-#             else:
-#                 color = yellow
-
-#             ax.fill_between([lo_e, hi_e], dr-dr*.05,dr+dr*.05 ,facecolor=color,edgecolor='k' ,alpha=0.7)
-
-#         ax.set_xscale('log')
-#         ax.set_yscale('log')
-
-#         ax.text(0.75, 0.95, name, transform=ax.transAxes,
-#           fontsize=6, fontweight='bold', va='top')
-
-#         if row_count == n_rows -1 or ((row_count == n_rows -2) and (n_dets%2 ==1) and (col_count==1)):
-#             ax.set_xlabel("Energy\n(keV)")
-
-#         if col_count ==0:
-#             ax.set_ylabel("Net rate\n(counts s$^{-1}$ keV$^{-1}$)")
-
-#         if col_count ==1:
-#             col_count =0
-#             row_count+=1
-
-#         else:
-#             col_count+=1
-
-#     if n_dets%2 ==1:
-
-#         ax = axes[row_count,col_count]
-
-#         ax.set_visible(False)
-
-#     return fig
+    ax.set_xscale('log')
+    ax.set_yscale('log')
