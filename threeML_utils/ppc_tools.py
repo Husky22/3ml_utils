@@ -83,6 +83,124 @@ def compute_ppc(analysis, result, n_sims, file_name=None):
     return sim_dls
 
 
+
+
+
+class PPC(object):
+
+    def __init__(self, filename):
+
+        with h5py.File(filename, 'r') as f:
+
+            n_sims = f.attrs['n_sims']
+
+            dets = f.keys()
+
+
+
+            
+
+            for d in dets:
+
+                ppc_counts = []
+                ppc_bkg = []
+                obs_counts = f[d]['obs_counts'].value
+                background_counts = f[d]['bkg_counts'].value
+                mask = f[d]['mask'].value
+                
+                ebounds = f[d]['ebounds'].value
+                
+                exposure = f[d].attrs['exposure']
+
+                for n in range(n_sims):
+                    ppc_counts.append(f[d]['ppc_counts_%d' % n].value.tolist())
+                    ppc_bkg.append(f[d]['ppc_background_counts_%d' % n].value.tolist())
+
+
+                det_obj = PPCDetector(det,
+                                      obs_counts,
+                                      background_counts,
+                                      mask,
+                                      ebounds,
+                                      exposure,
+                                      np.array(ppc_counts),
+                                      np.array(ppc_bkg)
+                )    
+                    
+
+                setattr(self, det, det_obj)
+                
+                    
+            self._n_sims = n_sims
+            self._dets = dets
+            self._filename = filename
+
+    @property
+    def n_sims(self):
+
+        return self._n_sims
+
+class PPCDetector(class):
+
+    def __init__(self, name, obs_counts, obs_background, mask, ebounds, exposure, ppc_counts, ppc_background):
+
+        self._exposure = exposure
+        self._obs_counts = obs_counts
+        self._obs_background = obs_background
+        self._mask = mask
+        self._ebounds = ebounds
+        self._channel_width = ebounds[1:] - ebounds[:-1]
+        self._ppc_counts = ppc_counts
+        self._ppc_background = ppc_background
+        self._name = name
+
+    @property
+    def name(def):
+        return self._name
+
+    @property
+    def obs_counts(def):
+        return self._obs_counts
+
+    @property
+    def obs_background(def):
+        return self._obs_background
+
+    @property
+    def mask(def):
+        return self._mask
+
+    @property
+    def ebounds(def):
+        return self._ebounds
+
+    @property
+    def channel_width(def):
+        return self._channel_width
+
+    @property
+    def exposure(def):
+        return self._exposure
+
+    @property
+    def ppc_counts(def):
+        return self._ppc_counts
+
+    @property
+    def ppc_background(def):
+        return self._ppc_background
+    
+
+
+
+
+
+
+
+    
+
+
+
 # light="#DCBCBC"
 # light_highlight="#C79999"
 # mid="#B97C7C"
