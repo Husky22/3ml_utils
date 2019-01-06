@@ -109,10 +109,11 @@ class PPC(object):
                     ppc_counts.append(f[d]['ppc_counts_%d' % n].value.tolist())
                     ppc_bkg.append(f[d]['ppc_background_counts_%d' % n].value.tolist())
 
-                det_obj = PPCDetector(det, obs_counts, background_counts, mask, ebounds, exposure, np.array(ppc_counts),
+                # build a detector object and attach it to the class
+                det_obj = PPCDetector(d, obs_counts, background_counts, mask, ebounds, exposure, np.array(ppc_counts),
                                       np.array(ppc_bkg))
 
-                setattr(self, det, det_obj)
+                setattr(self, d, det_obj)
 
             self._n_sims = n_sims
             self._dets = dets
