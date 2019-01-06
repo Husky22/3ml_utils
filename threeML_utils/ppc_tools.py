@@ -5,6 +5,7 @@ from threeML import DataList, clone_model
 
 import h5py
 
+import matplotlib.pyplot as plt
 
 def compute_ppc(analysis, result, n_sims, file_name):
     """ 
@@ -212,8 +213,11 @@ class PPCDetector(object):
 
             fig = ax.get_figure()
 
-            ppc_low = []
-            ppc_high = []
+
+        # compute all the percentiles
+            
+        ppc_low = []
+        ppc_high = []
 
         for level in levels:
 
@@ -223,28 +227,33 @@ class PPCDetector(object):
             ppc_low.append(tmp_low)
             ppc_high.append(tmp_high)
 
-    true_rate = self._obs_counts / self._channel_width / self._exposure
+        true_rate = self._obs_counts / self._channel_width / self._exposure
 
-    #colors = [light,mid,dark]
+        #colors = [light,mid,dark]
 
-    for j, (lo, hi) in enumerate(zip(ppc_low, ppc_high)):
+        for j, (lo, hi) in enumerate(zip(ppc_low, ppc_high)):
+
+            for i in range(len(self._ebounds) - 1):
+                if self._mask[i]:
+
+                    ax.fill_between([self._ebounds[i], self._ebounds[i + 1]], lo[i], hi[i], color=colors[j])
+
+        n_chan = len(self._ebounds) - 1
 
         for i in range(len(self._ebounds) - 1):
             if self._mask[i]:
 
-                ax.fill_between([self._ebounds[i], self._ebounds[i + 1]], lo[i], hi[i], color=colors[j])
+                ax.hlines(true_rate[i], self._ebounds[i], self._ebounds[i + 1], color=lc, lw=lw)
 
-    n_chan = len(self._ebounds) - 1
+                if i < n_chan - 1:
+                    if self._mask[i + 1]:
 
-    for i in range(len(self._ebounds) - 1):
-        if self._mask[i]:
+                        ax.vlines(self._ebounds[i + 1], true_rate[i], true_rate[i + 1], color=lc, lw=lw)
 
-            ax.hlines(true_rate[i], self._ebounds[i], self._ebounds[i + 1], color=lc, lw=lw)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
 
-            if i < n_chan - 1:
-                if self._mask[i + 1]:
+        ax.set_ylabel(r'Rate [cnt s$^{-1}$ keV$^{-1}$]')
+        ax.set_xlabel(r'Energy [keV]')
 
-                    ax.vlines(self._ebounds[i + 1], true_rate[i], true_rate[i + 1], color=lc, lw=lw)
-
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+        return fig
